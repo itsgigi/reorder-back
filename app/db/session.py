@@ -5,26 +5,34 @@ import os
 
 from app.config import settings
 
-# Per Supabase su Vercel/serverless, usa il connection pooler invece della connessione diretta
-# Il pooler risolve problemi IPv6 e migliora le performance
+# Per Supabase su Vercel/serverless, DEVI usare il Connection Pooler (porta 6543)
+# La Direct Connection (porta 5432) NON funziona su Vercel/serverless a causa di problemi IPv6
 database_url = settings.DATABASE_URL
 
-# Se è Supabase e non usa già il pooler, converti alla porta del pooler (6543)
-# Il pooler risolve problemi IPv6 e migliora le performance su serverless
+# Se è Supabase e usa la porta 5432 (Direct Connection), converti automaticamente a 6543 (Pooler)
 if "supabase.co" in database_url and ":5432/" in database_url:
-    # Sostituisci la porta 5432 con 6543 (Supabase connection pooler)
+    # ⚠️ ATTENZIONE: Stai usando Direct Connection (5432) che non funziona su Vercel!
+    # Convertiamo automaticamente al Connection Pooler (6543)
     database_url = database_url.replace(":5432/", ":6543/")
-    # Rimuovi eventuali parametri pgbouncer (psycopg2 non li riconosce)
-    # Il pooler funziona comunque senza parametri espliciti
+    # Rimuovi eventuali parametri problematici
     if "?" in database_url:
         params = database_url.split("?")[1]
         if params:
-            # Rimuovi solo pgbouncer, mantieni altri parametri
-            param_list = [p for p in params.split("&") if not p.startswith("pgbouncer")]
-            if param_list:
-                database_url = database_url.split("?")[0] + "?" + "&".join(param_list)
+            # Mantieni solo parametri validi, rimuovi pgbouncer e altri problematici
+            valid_params = []
+            for p in params.split("&"):
+                if p and not p.startswith("pgbouncer") and not p.startswith("sslmode"):
+                    valid_params.append(p)
+            if valid_params:
+                database_url = database_url.split("?")[0] + "?" + "&".join(valid_params)
             else:
                 database_url = database_url.split("?")[0]
+    
+    # Aggiungi sslmode=require per sicurezza
+    if "?" not in database_url:
+        database_url += "?sslmode=require"
+    elif "sslmode" not in database_url:
+        database_url += "&sslmode=require"
 
 # Configura connect_args per SQLite e PostgreSQL
 connect_args = {}
