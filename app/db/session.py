@@ -10,14 +10,21 @@ from app.config import settings
 database_url = settings.DATABASE_URL
 
 # Se è Supabase e non usa già il pooler, converti alla porta del pooler (6543)
+# Il pooler risolve problemi IPv6 e migliora le performance su serverless
 if "supabase.co" in database_url and ":5432/" in database_url:
     # Sostituisci la porta 5432 con 6543 (Supabase connection pooler)
     database_url = database_url.replace(":5432/", ":6543/")
-    # Aggiungi ?pgbouncer=true per indicare che stiamo usando il pooler
-    if "?" not in database_url:
-        database_url += "?pgbouncer=true"
-    elif "pgbouncer" not in database_url:
-        database_url += "&pgbouncer=true"
+    # Rimuovi eventuali parametri pgbouncer (psycopg2 non li riconosce)
+    # Il pooler funziona comunque senza parametri espliciti
+    if "?" in database_url:
+        params = database_url.split("?")[1]
+        if params:
+            # Rimuovi solo pgbouncer, mantieni altri parametri
+            param_list = [p for p in params.split("&") if not p.startswith("pgbouncer")]
+            if param_list:
+                database_url = database_url.split("?")[0] + "?" + "&".join(param_list)
+            else:
+                database_url = database_url.split("?")[0]
 
 # Configura connect_args per SQLite
 connect_args = {}

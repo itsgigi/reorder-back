@@ -20,8 +20,9 @@ Questa guida spiega come configurare un database PostgreSQL per il Reorder Backe
 7. Per **Vercel/Serverless**: Usa il **Connection Pooler** (porta 6543)
    - Vai su **Settings → Database → Connection Pooling**
    - Copia la **Connection String** dal pooler
-   - Formato: `postgresql://postgres:[PASSWORD]@db.xxx.supabase.co:6543/postgres?pgbouncer=true`
+   - Formato: `postgresql://postgres:[PASSWORD]@db.xxx.supabase.co:6543/postgres`
    - ⚠️ **IMPORTANTE**: Usa la porta **6543** (pooler) non 5432 per serverless!
+   - ⚠️ **NOTA**: Non includere parametri `pgbouncer` nella connection string (psycopg2 non li supporta)
 8. Per sviluppo locale: Puoi usare la porta 5432 normale
 
 **Nota**: Il codice converte automaticamente la porta 5432 in 6543 per Supabase, ma è meglio usare direttamente il pooler.
