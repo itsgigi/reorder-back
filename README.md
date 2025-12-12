@@ -50,6 +50,8 @@ Il database viene creato automaticamente al primo avvio dell'applicazione.
 
 ## 🏃 Avvio
 
+### Sviluppo
+
 ```bash
 uvicorn app.main:app --reload
 ```
@@ -57,6 +59,22 @@ uvicorn app.main:app --reload
 L'API sarà disponibile su `http://localhost:8000`
 
 Documentazione interattiva (Swagger UI): `http://localhost:8000/docs`
+
+### Produzione
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+**Nota**: Per dettagli completi sul deployment, consulta [DEPLOYMENT.md](DEPLOYMENT.md)
+
+### Troubleshooting 404 in Produzione
+
+Se ricevi errori 404 in produzione:
+
+1. Verifica di chiamare gli endpoint con il prefisso `/api` (es: `/api/health`)
+2. Se l'app è dietro un reverse proxy, configura la variabile `ROOT_PATH` nel file `.env`
+3. Testa l'endpoint root: `GET /` dovrebbe restituire informazioni sull'API
 
 ## 📚 API Endpoints
 

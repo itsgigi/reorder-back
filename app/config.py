@@ -8,6 +8,9 @@ class Settings(BaseSettings):
 
     # OpenAI / Datapizza
     OPENAI_API_KEY: str = "CHANGE_ME"
+    
+    # Deployment
+    ROOT_PATH: str = ""  # Per reverse proxy (es: "/api" se deployato su /api)
 
     class Config:
         env_file = ".env"
