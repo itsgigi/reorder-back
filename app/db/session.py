@@ -9,63 +9,50 @@ from app.config import settings
 # La Direct Connection (porta 5432) NON funziona su Vercel/serverless a causa di problemi IPv6
 database_url = settings.DATABASE_URL
 
+# Pulisci la connection string da parametri non supportati da psycopg2
+# Rimuovi SEMPRE pgbouncer=true (psycopg2 non lo riconosce)
+# Il pooler funziona comunque senza questo parametro
+if "?" in database_url:
+    base_url, params = database_url.split("?", 1)
+    if params:
+        # Rimuovi tutti i parametri pgbouncer (qualsiasi variante)
+        # Es: pgbouncer=true, pgbouncer=false, pgbouncer=1, etc.
+        filtered_params = []
+        for param in params.split("&"):
+            param = param.strip()
+            if not param:
+                continue
+            # Rimuovi qualsiasi parametro che inizia con "pgbouncer"
+            if param.lower().startswith("pgbouncer"):
+                continue  # psycopg2 non supporta pgbouncer
+            # Mantieni altri parametri validi
+            filtered_params.append(param)
+        
+        # Ricostruisci la connection string
+        if filtered_params:
+            database_url = base_url + "?" + "&".join(filtered_params)
+        else:
+            database_url = base_url
+
 # Se è Supabase e usa la porta 5432 (Direct Connection), converti automaticamente a 6543 (Pooler)
 if "supabase.co" in database_url and ":5432/" in database_url:
     # ⚠️ ATTENZIONE: Stai usando Direct Connection (5432) che non funziona su Vercel!
     # Convertiamo automaticamente al Connection Pooler (6543)
     database_url = database_url.replace(":5432/", ":6543/")
-    # Rimuovi eventuali parametri problematici
-    if "?" in database_url:
-        params = database_url.split("?")[1]
-        if params:
-            # Mantieni solo parametri validi, rimuovi pgbouncer e altri problematici
-            valid_params = []
-            for p in params.split("&"):
-                if p and not p.startswith("pgbouncer") and not p.startswith("sslmode"):
-                    valid_params.append(p)
-            if valid_params:
-                database_url = database_url.split("?")[0] + "?" + "&".join(valid_params)
-            else:
-                database_url = database_url.split("?")[0]
-    
-    # Aggiungi sslmode=require per sicurezza
+
+# Aggiungi sslmode=require se non presente (per sicurezza)
+if database_url.startswith("postgresql") and "sslmode" not in database_url:
     if "?" not in database_url:
         database_url += "?sslmode=require"
-    elif "sslmode" not in database_url:
+    else:
         database_url += "&sslmode=require"
 
-# Configura connect_args per SQLite e PostgreSQL
+# Configura connect_args per SQLite
 connect_args = {}
 if database_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
-elif database_url.startswith("postgresql"):
-    # Forza IPv4 per evitare problemi su Vercel/serverless che non supporta IPv6
-    # Risolvi il dominio a IPv4 prima della connessione
-    import socket
-    try:
-        # Estrai l'host dalla connection string
-        if "@" in database_url and ":" in database_url.split("@")[1]:
-            host_part = database_url.split("@")[1].split(":")[0].split("/")[0]
-            # Risolvi a IPv4
-            ipv4 = socket.gethostbyname(host_part)
-            # Sostituisci l'host con l'IP IPv4 nella connection string
-            if host_part in database_url:
-                database_url = database_url.replace(f"@{host_part}", f"@{ipv4}")
-                # Aggiungi il parametro hostname per mantenere il SNI
-                if "?" not in database_url:
-                    database_url += f"?host={host_part}"
-                else:
-                    database_url += f"&host={host_part}"
-    except Exception as e:
-        # Se la risoluzione fallisce, continua con il dominio originale
-        # e aggiungi parametri per forzare IPv4
-        pass
-    
-    # Aggiungi parametri per forzare IPv4 se non già presenti
-    if "?" not in database_url:
-        database_url += "?connect_timeout=10"
-    elif "connect_timeout" not in database_url:
-        database_url += "&connect_timeout=10"
+# Per PostgreSQL, non serve configurare connect_args speciali
+# La connection string contiene già tutti i parametri necessari
 
 # Crea l'engine con pool settings ottimizzati per serverless
 engine = create_engine(
