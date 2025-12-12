@@ -1,5 +1,6 @@
 fastapi>=0.120.0
 sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
 annotated-types==0.7.0
 anyio==4.12.0
 attrs==25.4.0
@@ -61,4 +62,4 @@ typing_extensions==4.15.0
 urllib3==2.6.0
 uvicorn==0.38.0
 zipp==3.23.0
-mangum==0.18.0
+mangum>=0.18.0

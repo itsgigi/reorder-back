@@ -13,16 +13,31 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # CREA LE TABELLE ALLO STARTUP
-# Su Vercel/serverless con SQLite il filesystem è read-only, quindi gestiamo l'errore gracefully
+# Su Vercel/serverless con SQLite il filesystem è read-only
+# PostgreSQL funziona perfettamente su Vercel/serverless
 try:
     Base.metadata.create_all(bind=engine)
-    logger.info("Database tables created successfully")
+    if settings.DATABASE_URL.startswith("postgresql"):
+        logger.info("✅ PostgreSQL database tables created/verified successfully")
+    elif settings.DATABASE_URL.startswith("sqlite"):
+        logger.info("✅ SQLite database tables created successfully")
+    else:
+        logger.info("✅ Database tables created successfully")
 except Exception as e:
-    # Su Vercel/serverless, SQLite non può scrivere sul filesystem read-only
-    # Questo è normale - usa un database esterno (PostgreSQL, etc.) in produzione
-    logger.warning(f"Could not create database tables: {e}")
-    logger.warning("If deploying on Vercel/serverless, use an external database (PostgreSQL, MySQL, etc.)")
-    logger.warning("SQLite is not suitable for serverless environments with read-only filesystem")
+    error_msg = str(e).lower()
+    if "unable to open database file" in error_msg or "read-only" in error_msg:
+        # SQLite su filesystem read-only (Vercel/serverless)
+        logger.error("❌ SQLite cannot write to read-only filesystem (Vercel/serverless)")
+        logger.error("💡 Solution: Use PostgreSQL (Supabase, Neon, Railway, etc.)")
+        logger.error("   Set DATABASE_URL=postgresql://user:pass@host:port/dbname")
+    elif "could not connect" in error_msg or "connection" in error_msg:
+        # Problema di connessione PostgreSQL
+        logger.error(f"❌ Cannot connect to database: {e}")
+        logger.error("💡 Check your DATABASE_URL connection string")
+    else:
+        # Altri errori
+        logger.warning(f"⚠️ Could not create database tables: {e}")
+        logger.warning("Tables may already exist or database may need initialization")
 
 # Configura root_path solo se non vuoto
 root_path = settings.ROOT_PATH if hasattr(settings, 'ROOT_PATH') and settings.ROOT_PATH else ""
