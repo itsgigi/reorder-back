@@ -13,8 +13,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # CREA LE TABELLE ALLO STARTUP
-# Su Vercel/serverless con SQLite il filesystem è read-only
-# PostgreSQL funziona perfettamente su Vercel/serverless
 try:
     Base.metadata.create_all(bind=engine)
     if settings.DATABASE_URL.startswith("postgresql"):
@@ -25,27 +23,16 @@ try:
         logger.info("✅ Database tables created successfully")
 except Exception as e:
     error_msg = str(e).lower()
-    if "unable to open database file" in error_msg or "read-only" in error_msg:
-        # SQLite su filesystem read-only (Vercel/serverless)
-        logger.error("❌ SQLite cannot write to read-only filesystem (Vercel/serverless)")
-        logger.error("💡 Solution: Use PostgreSQL (Supabase, Neon, Railway, etc.)")
-        logger.error("   Set DATABASE_URL=postgresql://user:pass@host:port/dbname")
-    elif "could not connect" in error_msg or "connection" in error_msg:
-        # Problema di connessione PostgreSQL
+    if "could not connect" in error_msg or "connection" in error_msg:
         logger.error(f"❌ Cannot connect to database: {e}")
         logger.error("💡 Check your DATABASE_URL connection string")
     else:
-        # Altri errori
         logger.warning(f"⚠️ Could not create database tables: {e}")
         logger.warning("Tables may already exist or database may need initialization")
-
-# Configura root_path solo se non vuoto
-root_path = settings.ROOT_PATH if hasattr(settings, 'ROOT_PATH') and settings.ROOT_PATH else ""
 
 app = FastAPI(
     title="Reorder Backend",
     version="0.1.1",
-    root_path=root_path if root_path else None,  # None invece di stringa vuota
 )
 
 # Configurazione CORS
