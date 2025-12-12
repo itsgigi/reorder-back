@@ -12,8 +12,17 @@ from app.config import settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# CREA LE TABELLE ALLO STARTUP (per ora, prima di Alembic)
-Base.metadata.create_all(bind=engine)
+# CREA LE TABELLE ALLO STARTUP
+# Su Vercel/serverless con SQLite il filesystem è read-only, quindi gestiamo l'errore gracefully
+try:
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables created successfully")
+except Exception as e:
+    # Su Vercel/serverless, SQLite non può scrivere sul filesystem read-only
+    # Questo è normale - usa un database esterno (PostgreSQL, etc.) in produzione
+    logger.warning(f"Could not create database tables: {e}")
+    logger.warning("If deploying on Vercel/serverless, use an external database (PostgreSQL, MySQL, etc.)")
+    logger.warning("SQLite is not suitable for serverless environments with read-only filesystem")
 
 # Configura root_path solo se non vuoto
 root_path = settings.ROOT_PATH if hasattr(settings, 'ROOT_PATH') and settings.ROOT_PATH else ""

@@ -52,11 +52,16 @@ Nel dashboard Vercel, vai su **Settings → Environment Variables** e aggiungi:
 
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
-DATABASE_URL=sqlite:///./reorder.db
+DATABASE_URL=postgresql://user:password@host:port/dbname
 ROOT_PATH=
 ```
 
-⚠️ **IMPORTANTE**: Vercel ha un filesystem read-only per le serverless functions. SQLite potrebbe non funzionare correttamente in produzione su Vercel.
+⚠️ **CRITICO**: Vercel ha un filesystem **read-only** per le serverless functions. **SQLite NON funziona su Vercel** perché non può scrivere file.
+
+**Devi usare un database esterno:**
+- PostgreSQL: [Supabase](https://supabase.com) (gratuito), [Neon](https://neon.tech) (gratuito), [Railway](https://railway.app)
+- MySQL: [PlanetScale](https://planetscale.com) (gratuito), [Railway](https://railway.app)
+- MongoDB: [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (gratuito)
 
 ### 4. Database su Vercel
 
