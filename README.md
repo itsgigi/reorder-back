@@ -62,9 +62,14 @@ Documentazione interattiva (Swagger UI): `http://localhost:8000/docs`
 
 ### Produzione
 
+**Opzione 1: Server tradizionale (Render, Railway, Fly.io)**
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
+
+**Opzione 2: Vercel (Serverless)**
+Il progetto è già configurato per Vercel con `api/index.py` e `vercel.json`.
+Vedi [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) per dettagli.
 
 **Nota**: Per dettagli completi sul deployment, consulta [DEPLOYMENT.md](DEPLOYMENT.md)
 
