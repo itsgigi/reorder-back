@@ -9,6 +9,20 @@ Render è **molto più semplice** di Vercel per FastAPI perché:
 
 ## 📋 Passi per il Deploy
 
+### Opzione A: Usa render.yaml (Consigliato - Più Semplice)
+
+1. Il file `render.yaml` è già presente nel repository
+2. Vai su [render.com](https://render.com)
+3. Clicca **"New +"** → **"Blueprint"**
+4. Connetti il repository GitHub
+5. Render leggerà automaticamente `render.yaml` e configurerà tutto
+6. Aggiungi solo le variabili d'ambiente:
+   - `DATABASE_URL` (la tua connection string Supabase)
+   - `OPENAI_API_KEY` (la tua chiave OpenAI)
+7. Clicca **"Apply"** e attendi il deploy
+
+### Opzione B: Configurazione Manuale
+
 ### STEP 1: Crea Account su Render
 
 1. Vai su **[render.com](https://render.com)**
@@ -38,6 +52,13 @@ Compila i campi:
 - **Start Command**: 
   ```bash
   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+  ```
+  
+  **⚠️ IMPORTANTE**: Assicurati che il comando sia esattamente questo. Render usa `$PORT` come variabile d'ambiente.
+  
+  Se hai problemi, prova anche:
+  ```bash
+  python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
   ```
 
 ### STEP 4: Aggiungi PostgreSQL Database (Opzionale ma Consigliato)
@@ -141,6 +162,23 @@ Render fa automaticamente health checks. Puoi configurarli in **Settings → Hea
 
 ## 🐛 Troubleshooting
 
+### Problema: "Port scan timeout reached" o "No open ports detected"
+
+**Causa**: Render non trova l'app in ascolto sulla porta corretta.
+
+**Soluzione**:
+1. Verifica il **Start Command** è esattamente:
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+   ```
+2. Assicurati che `uvicorn` sia in `requirements.txt` (già presente)
+3. Controlla i **Logs** per vedere se l'app si avvia correttamente
+4. Se vedi errori di import, verifica che tutti i moduli siano corretti
+5. Prova anche questo comando alternativo:
+   ```bash
+   python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+   ```
+
 ### Problema: Build fallisce
 
 **Soluzione**:
@@ -154,6 +192,7 @@ Render fa automaticamente health checks. Puoi configurarli in **Settings → Hea
 - Verifica il **Start Command**: deve essere `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - Controlla i log per errori di import
 - Verifica che tutte le variabili d'ambiente siano configurate
+- Assicurati che l'app non crasha all'avvio (controlla i log)
 
 ### Problema: Database non connesso
 
@@ -161,6 +200,7 @@ Render fa automaticamente health checks. Puoi configurarli in **Settings → Hea
 - Verifica che il database sia **collegato** al service
 - Controlla che `DATABASE_URL` sia presente nelle variabili d'ambiente
 - Verifica i log per errori di connessione
+- Assicurati che la connection string sia corretta (senza `pgbouncer=true`)
 
 ## 💰 Costi
 
