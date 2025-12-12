@@ -17,9 +17,14 @@ Questa guida spiega come configurare un database PostgreSQL per il Reorder Backe
    - **Region**: scegli la più vicina
 5. Attendi 2-3 minuti per la creazione
 6. Vai su **Settings → Database**
-7. Copia la **Connection String** (URI)
-   - Formato: `postgresql://postgres:[PASSWORD]@db.xxx.supabase.co:5432/postgres`
-   - Sostituisci `[PASSWORD]` con la password che hai scelto
+7. Per **Vercel/Serverless**: Usa il **Connection Pooler** (porta 6543)
+   - Vai su **Settings → Database → Connection Pooling**
+   - Copia la **Connection String** dal pooler
+   - Formato: `postgresql://postgres:[PASSWORD]@db.xxx.supabase.co:6543/postgres?pgbouncer=true`
+   - ⚠️ **IMPORTANTE**: Usa la porta **6543** (pooler) non 5432 per serverless!
+8. Per sviluppo locale: Puoi usare la porta 5432 normale
+
+**Nota**: Il codice converte automaticamente la porta 5432 in 6543 per Supabase, ma è meglio usare direttamente il pooler.
 
 **Limiti gratuiti**: 500MB storage, 2GB bandwidth/mese
 
@@ -117,14 +122,21 @@ Dopo la configurazione, verifica che funzioni:
 
 ## 🐛 Troubleshooting
 
-### Errore: "could not connect to server"
+### Errore: "could not connect to server" o "Cannot assign requested address"
 
-**Causa**: Connection string sbagliata o database non raggiungibile
+**Causa**: 
+- Per Supabase su Vercel: stai usando la porta 5432 invece del pooler (6543)
+- Connection string sbagliata o database non raggiungibile
+- Problemi IPv6 vs IPv4
 
 **Soluzione**:
+- **Per Supabase su Vercel**: Usa il **Connection Pooler** (porta 6543)
+  - Vai su Supabase → Settings → Database → Connection Pooling
+  - Copia la connection string dal pooler
+  - Formato: `postgresql://...@db.xxx.supabase.co:6543/...?pgbouncer=true`
 - Verifica la connection string
 - Assicurati che il database sia attivo
-- Controlla firewall/network restrictions
+- Il codice converte automaticamente 5432→6543 per Supabase, ma è meglio usare direttamente il pooler
 
 ### Errore: "password authentication failed"
 
