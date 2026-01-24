@@ -11,7 +11,6 @@ from app.schemas.confirm_invoice import (
     ConfirmInvoiceResponse,
 )
 from app.deps import get_db
-from app.services.invoice_extractor import DatapizzaInvoiceExtractor
 from app.services.matching import (
     get_or_create_supplier,
     deterministic_match_all_lines,
@@ -22,7 +21,22 @@ from sqlalchemy import func
 
 router = APIRouter()
 
-extractor = DatapizzaInvoiceExtractor()
+# Lazy import per evitare errori se datapizza non è installato
+extractor = None
+
+def get_extractor():
+    """Lazy initialization dell'estrattore fatture"""
+    global extractor
+    if extractor is None:
+        try:
+            from app.services.invoice_extractor import DatapizzaInvoiceExtractor
+            extractor = DatapizzaInvoiceExtractor()
+        except ImportError as e:
+            raise HTTPException(
+                status_code=503,
+                detail="Invoice extraction service not available. Please install datapizza-ai packages (requires Python 3.10+)."
+            )
+    return extractor
 
 
 @router.get("/health")
@@ -46,7 +60,8 @@ async def import_invoice(
     mime_ext = file.filename.split(".")[-1].lower()
 
     # 2) Estrazione AI
-    extraction = extractor.extract_from_bytes(file_bytes, mime_ext)
+    extractor_instance = get_extractor()
+    extraction = extractor_instance.extract_from_bytes(file_bytes, mime_ext)
 
     # 3) Fornitore
     supplier = get_or_create_supplier(db, extraction.supplier.name)

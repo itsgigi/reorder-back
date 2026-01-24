@@ -36,9 +36,16 @@ app = FastAPI(
 )
 
 # Configurazione CORS
+# Nota: quando allow_credentials=True, non possiamo usare allow_origins=["*"]
+# Dobbiamo specificare esplicitamente le origini permesse
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permette tutte le origini
+    allow_origins=[
+        "https://reorder-front.vercel.app",  # Produzione frontend
+        "http://localhost:5173",  # Sviluppo locale (Vite default)
+        "http://localhost:3000",  # Sviluppo locale (alternativo)
+        "http://127.0.0.1:5173",  # Sviluppo locale (alternativo)
+    ],
     allow_credentials=True,
     allow_methods=["*"],  # Permette tutti i metodi
     allow_headers=["*"],  # Permette tutti gli header
